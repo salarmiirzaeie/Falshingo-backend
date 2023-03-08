@@ -55,7 +55,8 @@ exports.getCampLeaders = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    const leaders = await user.leaders;
+  
+    const leaders = await this.findusers(user);
 
     res.status(200).json(leaders);
   } catch (err) {
@@ -124,7 +125,7 @@ exports.getPopularCamps = async (req, res, next) => {
       };
       const arr = [];
 
-      await profilePhotos.forEach((param) => {
+       profilePhotos.forEach((param) => {
         if (param.user.toString() === element._id.toString()) {
           arr.push(param);
         }
@@ -134,7 +135,7 @@ exports.getPopularCamps = async (req, res, next) => {
       obj.rate = element.rate;
       obj.description = element.description;
       obj.name = element.name;
-      obj.leaders = element.leaders;
+     
 
       popCamps.push(obj);
     });
@@ -171,6 +172,8 @@ exports.getSinglePost = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.params.id);
     const user = await User.findById(post.user);
+    
+    post.joinedUsers = await this.findusersjoined(post)
 
     if (!post) {
       const error = new Error("هیجی نیس");
@@ -201,6 +204,8 @@ exports.getSinglePost = async (req, res, next) => {
 exports.getpostjoiners = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.params.id);
+    
+    post.joinedUsers = await this.findusersjoined(post);
 
     if (!post) {
       const error = new Error("هیجی نیس");
@@ -293,4 +298,56 @@ exports.getCaptcha = (req, res) => {
   const imgBase64 = Buffer.from(img, "base64");
 
   res.send(imgBase64);
+};
+exports.findusers = async (post) => {
+  const ids = [];
+  post.leaders.forEach((i) => {
+    ids.push(i._id);
+  });
+  const joinedUsers = await User.find({ _id: { $in: ids } });
+  const profilePhotos = await Gallery.find({ type: "profilephoto" }).sort({
+    createdAt: "desc",
+  });
+  const i = [];
+  joinedUsers.forEach((w) => {
+    let obj = { profilephotoss: [] };
+    obj._id = w._id;
+    obj.email = w.email;
+    obj.name = w.name;
+    obj.username = w.username;
+    profilePhotos.forEach((q) => {
+      if (q.user.toString() === w._id.toString()) {
+        obj.profilephotoss.push(q);
+      }
+    });
+    i.push(obj);
+  });
+  post.leaders = i;
+  return post.leaders
+};
+exports.findusersjoined = async (post) => {
+  const ids = [];
+  post.joinedUsers.forEach((i) => {
+    ids.push(i._id);
+  });
+  const joinedUsers = await User.find({ _id: { $in: ids } });
+  const profilePhotos = await Gallery.find({ type: "profilephoto" }).sort({
+    createdAt: "desc",
+  });
+  const i = [];
+  joinedUsers.forEach((w) => {
+    let obj = { profilephotoss: [] };
+    obj._id = w._id;
+    obj.email = w.email;
+    obj.name = w.name;
+    obj.username = w.username;
+    profilePhotos.forEach((q) => {
+      if (q.user.toString() === w._id.toString()) {
+        obj.profilephotoss.push(q);
+      }
+    });
+    i.push(obj);
+  });
+  post.joinedUsers = i;
+  return post.joinedUsers
 };

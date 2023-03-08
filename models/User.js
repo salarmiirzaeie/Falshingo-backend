@@ -70,6 +70,9 @@ const userSchema = new mongoose.Schema({
   leaders: {
     type: Array,
   },
+  cards: {
+    type: Array,
+  },
   city: {
     type: String,
     default: "Tehran",
