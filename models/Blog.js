@@ -54,9 +54,8 @@ const blogSchmea = new mongoose.Schema({
     enum: ["forest", "sea", "offroad", "desert", "historical", "mountain"],
   },
   city: {
-    type: String,
-    default: "Tehran",
-    enum: ["Tabriz", "Tehran", "Alborz"],
+    type: Number,
+    default: 301,
   },
   status: {
     type: String,

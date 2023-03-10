@@ -29,13 +29,13 @@ exports.getSinglePost = async (req, res, next) => {
     const post = await Blog.findOne({
       _id: req.params.id,
     });
-    
+
     if (!post) {
       const error = new Error("چنین پستی نیست");
       error.statusCode = 404;
       throw error;
     }
-    post.joinedUsers=await this.findusersjoined(post)
+    post.joinedUsers = await this.findusersjoined(post);
     res.status(200).json(post);
   } catch (error) {
     next(error);
@@ -182,7 +182,7 @@ exports.acceptPost = async (req, res, next) => {
 
 exports.requestedTours = async (req, res, next) => {
   try {
-    const users = await User.find({ isAccept: "waiting" }).sort({
+    const users = await User.find({ isAccept: "waiting", type: "tour" }).sort({
       createdAt: "desc",
     });
     if (!users) {
@@ -258,7 +258,11 @@ exports.createPost = async (req, res, next) => {
       user: req.userId,
     }).countDocuments();
     const user = await User.findById(req.userId);
-    if (permissions.length == 0) {
+    const permissions = await Gallery.find({
+      user: req.userId,
+      type: "permissionphoto",
+    }).countDocuments();
+    if (permissions === 0) {
       const error = new Error("برای ایجادتوربایدقسمت مجوزهاتکمیل شود");
       error.statusCode = 404;
       throw error;
@@ -402,6 +406,7 @@ exports.joinTour = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+
     if (req.body.status !== "ok") {
       const error = new Error(
         "پرداخت باموفقیت انجام نشد وشمانتوانستید عضو بشید"
@@ -499,7 +504,13 @@ exports.addSaveds = async (req, res, next) => {
       throw error;
     }
     const post = await Blog.findById(req.body.postId);
-
+    user.saveds.forEach((i) => {
+      if (i._id.toString() === req.body.postId.toString()) {
+        const error = new Error("این پست قبلاذخیره شده است");
+        error.statusCode = 408;
+        throw error;
+      }
+    });
     await user.saveds.push(post);
     user.save();
     res.status(200).json({ message: "حله" });
@@ -702,9 +713,8 @@ exports.getLeaders = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    
 
-    user.leaders=await this.findusers(user)
+    user.leaders = await this.findusers(user);
 
     let leaders = await user.leaders;
 
@@ -847,7 +857,7 @@ exports.findusers = async (post) => {
     i.push(obj);
   });
   post.leaders = i;
-  return post.leaders
+  return post.leaders;
 };
 exports.findusersjoined = async (post) => {
   const ids = [];
@@ -873,5 +883,59 @@ exports.findusersjoined = async (post) => {
     i.push(obj);
   });
   post.joinedUsers = i;
-  return post.joinedUsers
+  return post.joinedUsers;
+};
+exports.addCards = async (req, res, next) => {
+  try {
+    const card = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("چنین یوزری نیست");
+      error.statusCode = 404;
+      throw error;
+    }
+    const cardwid = { ...card, id: shortId.generate() };
+    await user.cards.push(cardwid);
+    user.save();
+
+    res.status(200).json({ message: "حله" });
+  } catch (error) {
+    next(error);
+  }
+};
+exports.deleteCards = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("چنین یوزری نیست");
+      error.statusCode = 404;
+      throw error;
+    }
+    const cards = await user.cards;
+    const index = await cards.findIndex(
+      (obj) => req.body.cardid === obj.id.toString()
+    );
+
+    await cards.splice(index, 1);
+    user.save();
+
+    res.status(200).json({ message: "حله" });
+  } catch (error) {
+    next(error);
+  }
+};
+exports.userCards = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("چنین یوزری نیست");
+      error.statusCode = 404;
+      throw error;
+    }
+    const cards = await user.cards;
+
+    res.status(200).json(cards);
+  } catch (error) {
+    next(error);
+  }
 };

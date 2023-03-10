@@ -5,6 +5,8 @@ const { sendEmail } = require("../utils/mailer");
 const User = require("../models/User");
 const Gallery = require("../models/Gallery");
 const jwt = require("jsonwebtoken");
+const provinces = require("../utils/json/provinces");
+const citiess = require("../utils/json/cities");
 
 let CAPTCHA_NUM;
 
@@ -12,7 +14,7 @@ exports.getIndex = async (req, res, next) => {
   try {
     const posts = await Blog.find({
       isAccept: "accept",
-      city: req.params.city,
+      city: Number(req.params.city),
     }).sort({
       createdAt: "desc",
     });
@@ -55,7 +57,7 @@ exports.getCampLeaders = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-  
+
     const leaders = await this.findusers(user);
 
     res.status(200).json(leaders);
@@ -87,9 +89,14 @@ exports.getRelatedTours = async (req, res, next) => {
     const posts = await Blog.find({
       type: req.body.typep,
       _id: { $ne: req.body.id },
-    }).sort({
-      createdAt: "desc",
-    });
+      city: Number(req.params.city),
+      isAccept: "accept",
+    })
+      .sort({
+        createdAt: "desc",
+      })
+      .limit(5);
+
     if (!posts) {
       const error = new Error("هیچی نیس");
       error.statusCode = 404;
@@ -103,7 +110,11 @@ exports.getRelatedTours = async (req, res, next) => {
 };
 exports.getPopularCamps = async (req, res, next) => {
   try {
-    const camps = await User.find({ type: "tour", city: req.params.city })
+    const camps = await User.find({
+      type: "tour",
+      city: Number(req.params.city),
+      isAccept: "accept",
+    })
       .sort({
         rate: -1,
       })
@@ -125,7 +136,7 @@ exports.getPopularCamps = async (req, res, next) => {
       };
       const arr = [];
 
-       profilePhotos.forEach((param) => {
+      profilePhotos.forEach((param) => {
         if (param.user.toString() === element._id.toString()) {
           arr.push(param);
         }
@@ -135,7 +146,6 @@ exports.getPopularCamps = async (req, res, next) => {
       obj.rate = element.rate;
       obj.description = element.description;
       obj.name = element.name;
-     
 
       popCamps.push(obj);
     });
@@ -152,7 +162,10 @@ exports.getPopularCamps = async (req, res, next) => {
 
 exports.getPopularTours = async (req, res, next) => {
   try {
-    const tours = await Blog.find({ isAccept: "accept", city: req.params.city })
+    const tours = await Blog.find({
+      isAccept: "accept",
+      city: Number(req.params.city),
+    })
       .sort({
         capacity: 1,
       })
@@ -172,8 +185,8 @@ exports.getSinglePost = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.params.id);
     const user = await User.findById(post.user);
-    
-    post.joinedUsers = await this.findusersjoined(post)
+
+    post.joinedUsers = await this.findusersjoined(post);
 
     if (!post) {
       const error = new Error("هیجی نیس");
@@ -204,7 +217,7 @@ exports.getSinglePost = async (req, res, next) => {
 exports.getpostjoiners = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.params.id);
-    
+
     post.joinedUsers = await this.findusersjoined(post);
 
     if (!post) {
@@ -213,6 +226,27 @@ exports.getpostjoiners = async (req, res, next) => {
       throw error;
     }
     res.status(200).json(post.joinedUsers);
+  } catch (err) {
+    next(err);
+  }
+};
+exports.getprovinces = async (req, res, next) => {
+  try {
+    const provines = provinces.provinces;
+
+    res.status(200).json(provines);
+  } catch (err) {
+    next(err);
+  }
+};
+exports.getcities = async (req, res, next) => {
+  try {
+    const cities = citiess.cities;
+    let filcityies = cities.filter(
+      (q) => q.province_id === Number(req.params.id)
+    );
+
+    res.status(200).json(filcityies);
   } catch (err) {
     next(err);
   }
@@ -236,7 +270,9 @@ exports.getSingleuser = async (req, res, next) => {
       name: user.name,
       profilePhotos: profilePhotos,
       description: user.description,
+      username: user.username,
       rate: user.rate,
+      phoneNumber: user.phoneNumber,
       id: user._id,
     });
   } catch (err) {
@@ -323,7 +359,7 @@ exports.findusers = async (post) => {
     i.push(obj);
   });
   post.leaders = i;
-  return post.leaders
+  return post.leaders;
 };
 exports.findusersjoined = async (post) => {
   const ids = [];
@@ -349,5 +385,11 @@ exports.findusersjoined = async (post) => {
     i.push(obj);
   });
   post.joinedUsers = i;
-  return post.joinedUsers
+  return post.joinedUsers;
+};
+exports.findcity = async (id) => {
+  const cities = citiess.cities;
+  let city = cities.find((q) => q.id === id);
+
+  return city;
 };

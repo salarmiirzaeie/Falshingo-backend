@@ -6,7 +6,6 @@ const { schema } = require("./secure/userValidation");
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    // required: [true, "نام و نام خانوادگی الزامی می باشد"],
     trim: true,
   },
   email: {
@@ -16,8 +15,8 @@ const userSchema = new mongoose.Schema({
   },
   username: {
     type: String,
-    // required: true,
-    unique: true,
+    default: "",
+
   },
   password: {
     type: String,
@@ -74,9 +73,8 @@ const userSchema = new mongoose.Schema({
     type: Array,
   },
   city: {
-    type: String,
-    default: "Tehran",
-    enum: ["Tabriz", "Tehran", "Alborz"],
+    type: Number,
+    default: 301,
   },
   rnumb:{
     type:Number,

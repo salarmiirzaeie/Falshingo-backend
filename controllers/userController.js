@@ -10,7 +10,14 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { sendEmail } = require("../utils/mailer");
 const Gallery = require("../models/Gallery");
+const citiess = require("../utils/json/cities");
 
+exports.findcity = async (id) => {
+  const cities = citiess.cities;
+  let city = cities.find((q) => q.id === id);
+
+  return city.name;
+};
 exports.isAuth = (req, res, next) => {
   const authHeader = req.get("Authorization");
   try {
@@ -33,16 +40,20 @@ exports.isAuth = (req, res, next) => {
 };
 exports.handleLogin = async (req, res, next) => {
   const { email, password } = req.body;
+  const usernamelowered = await email.toLowerCase();
   try {
     const user = await User.findOne({
-      $or: [{ email: email }, { username: email }],
+      $or: [{ email: usernamelowered }, { username: usernamelowered }],
     });
     if (!user) {
       const error = new Error("کاربری یافت نشد");
       error.statusCode = 404;
       throw error;
     }
-    const profilePhotos = await Gallery.find({ user: user._id,type:'profilephoto' }).sort({
+    const profilePhotos = await Gallery.find({
+      user: user._id,
+      type: "profilephoto",
+    }).sort({
       createdAt: "desc",
     });
     const isEqual = await bcrypt.compare(password, user.password);
@@ -70,7 +81,7 @@ exports.handleLogin = async (req, res, next) => {
         res.status(206).json({
           token,
           profilePhotos,
-          city: user.city,
+          city: await this.findcity(user.city),
           isAccept: user.isAccept,
         });
       }
@@ -100,29 +111,39 @@ exports.handleLogin = async (req, res, next) => {
 exports.createUser = async (req, res, next) => {
   try {
     await User.userValidation(req.body);
-    const { name, email, password, type, city } = req.body;
-    const user = await User.findOne({ email });
+    const { name, email, password, type, city, username } = req.body;
     let isAccept = "accept";
+    const usernamelowered = await username.toLowerCase();
+    const emaillowered = await email.toLowerCase();
+    const user = await User.findOne({ email: emaillowered });
 
-    if (type == "tour") {
+    if (type === "tour") {
       isAccept = "waiting";
     }
-    if (user) {
-      const error = new Error("کاربری بااین ایمیل موجوده");
-      error.statusCode = 422;
-      throw error;
-    } else {
-      await User.create({ name, email, password, type, isAccept, city });
-
-      //? Send Welcome Email
-      // sendEmail(
-      //   email,
-      //   name,
-      //   "خوش آمدی به وبلاگ ما",
-      //   "خیلی خوشحالیم که به جمع ما وبلاگرهای خفن ملحق شدی"
-      // );
-      res.status(201).json({ message: "عضوشد" });
+    let usernam = null;
+    if (type === "tourist") {
+      usernam = await User.findOne({ username: usernamelowered });
     }
+    if (user) {
+      const error = new Error("چنین  ایمیلی موجود است");
+      error.statusCode = 406;
+      throw error;
+    }
+    if (usernam) {
+      const error = new Error("چنین نام کاربری موجود است");
+      error.statusCode = 406;
+      throw error;
+    }
+    await User.create({
+      name,
+      email: emaillowered,
+      password,
+      type,
+      isAccept,
+      city,
+      username: usernamelowered,
+    });
+    res.status(201).json({ message: "عضوشد" });
   } catch (err) {
     next(err);
   }
@@ -336,7 +357,10 @@ exports.editProfile = async (req, res, next) => {
 exports.userProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
-    const profilePhotos = await Gallery.find({ user: req.userId,type:'profilephoto' }).sort({
+    const profilePhotos = await Gallery.find({
+      user: req.userId,
+      type: "profilephoto",
+    }).sort({
       createdAt: "desc",
     });
     if (!user) {
@@ -344,6 +368,7 @@ exports.userProfile = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+   const permissionlenth=await Gallery.find({type:"permissionphoto",user:req.userId}).countDocuments()
     res.status(200).json({
       id: user._id,
       name: user.name,
@@ -354,9 +379,10 @@ exports.userProfile = async (req, res, next) => {
       username: user.username,
       profilePhotos: profilePhotos,
       description: user.description,
-      city: user.city,
+      city: await this.findcity(user.city),
       money: user.money,
       isAccept: user.isAccept,
+      permissionlenth: permissionlenth,
     });
   } catch (err) {
     next(err);

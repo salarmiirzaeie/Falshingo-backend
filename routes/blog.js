@@ -9,6 +9,8 @@ const router = new Router();
 router.get("/getall/:city", blogController.getIndex);
 router.get("/getPopularCamps/:city", blogController.getPopularCamps);
 router.get("/getPopularTours/:city", blogController.getPopularTours);
+router.get("/provinces", blogController.getprovinces);
+router.get("/cities/:id", blogController.getcities);
 
 router.get("/getCampTours/:id", blogController.getCampTours);
 router.get("/getCampGallery/:id", blogController.getCampGallery);
@@ -19,7 +21,7 @@ router.get("/getcampleaders/:id", blogController.getCampLeaders);
 router.get("/post/:id", blogController.getSinglePost);
 router.get("/joinedusers/:id", blogController.getpostjoiners);
 router.get("/user/:id", blogController.getSingleuser);
-router.post("/relatedTours", blogController.getRelatedTours);
+router.post("/relatedTours/:city", blogController.getRelatedTours);
 
 //  @desc   Weblog Numric Captcha
 //  @route  GET /captcha.png
