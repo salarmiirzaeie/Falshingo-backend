@@ -46,6 +46,7 @@ exports.editPost = async (req, res, next) => {
   const thumbnails = req.files ? Object.values(req.files) : [];
 
   const post = await Blog.findOne({ _id: req.params.id });
+
   const thumbnailsnames = post.thumbnail;
 
   try {
@@ -74,16 +75,25 @@ exports.editPost = async (req, res, next) => {
 
     const { title, isAccept, body, date, durationTime, capacity, type, price } =
       req.body;
-    post.title = title;
-    post.isAccept = "waiting";
-    post.body = body;
-    post.type = type;
-    post.price = price;
-    post.date = date;
-    post.durationTime = durationTime;
-    post.capacity = capacity;
-    post.thumbnail = thumbnailsnames;
-    await post.save();
+    if (post.joinedUsers.length === 0) {
+      post.title = title;
+      post.isAccept = isAccept;
+      post.body = body;
+      post.type = type;
+      post.price = price;
+      post.date = date;
+      post.durationTime = durationTime;
+      post.capacity = capacity;
+      post.thumbnail = thumbnailsnames;
+      await post.save();
+    }else{
+      post.body = body;
+
+      post.thumbnail = thumbnailsnames;
+      await post.save();
+
+    }
+    
     res.status(200).json({ message: "حله" });
   } catch (err) {
     next(err);
@@ -695,8 +705,8 @@ exports.addleaders = async (req, res, next) => {
     }).sort({
       createdAt: "desc",
     });
-    const { _id, name, email, username,phoneNumber } = leader;
-    const profile = { _id, name, email, username, profilephotoss,phoneNumber };
+    const { _id, name, email, username, phoneNumber } = leader;
+    const profile = { _id, name, email, username, profilephotoss, phoneNumber };
 
     await user.leaders.push(profile);
     user.save();
@@ -846,7 +856,6 @@ exports.findusers = async (post) => {
   joinedUsers.forEach((w) => {
     let obj = { profilephotoss: [] };
     obj._id = w._id;
-    obj.email = w.email;
     obj.name = w.name;
     obj.username = w.username;
     profilePhotos.forEach((q) => {
@@ -872,7 +881,6 @@ exports.findusersjoined = async (post) => {
   joinedUsers.forEach((w) => {
     let obj = { profilephotoss: [] };
     obj._id = w._id;
-    obj.email = w.email;
     obj.name = w.name;
     obj.username = w.username;
     profilePhotos.forEach((q) => {
@@ -894,6 +902,14 @@ exports.addCards = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+    const usercards = user.cards;
+    usercards.forEach((item) => {
+      if (item.card === card.cards || item.shaba === card.shaba) {
+        const error = new Error("شماقبلااین کارت واضافه کردید");
+        error.statusCode = 409;
+        throw error;
+      }
+    });
     const cardwid = { ...card, id: shortId.generate() };
     await user.cards.push(cardwid);
     user.save();
