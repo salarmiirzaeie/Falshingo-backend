@@ -695,8 +695,8 @@ exports.addleaders = async (req, res, next) => {
     }).sort({
       createdAt: "desc",
     });
-    const { _id, name, email, username } = leader;
-    const profile = { _id, name, email, username, profilephotoss };
+    const { _id, name, email, username,phoneNumber } = leader;
+    const profile = { _id, name, email, username, profilephotoss,phoneNumber };
 
     await user.leaders.push(profile);
     user.save();

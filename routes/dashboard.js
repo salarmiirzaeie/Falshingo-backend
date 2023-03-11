@@ -30,7 +30,9 @@ router.put("/unsave-tour",authenticated, adminController.unSaved);
 router.put("/delete-leader",authenticated, adminController.deleteleader);
 
 router.get("/saveds",authenticated, adminController.saveds);
-router.get("/joineds",authenticated, adminController.joineds);
+router.put("/addcard",authenticated, adminController.addCards);
+router.get("/usercards",authenticated, adminController.userCards);
+router.delete("/deletecard",authenticated, adminController.deleteCards);
 
 router.post("/is-saved",authenticated, adminController.isSaved);
 router.post("/is-joined",authenticated, adminController.isJoined);
