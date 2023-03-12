@@ -86,14 +86,13 @@ exports.editPost = async (req, res, next) => {
       post.capacity = capacity;
       post.thumbnail = thumbnailsnames;
       await post.save();
-    }else{
+    } else {
       post.body = body;
 
       post.thumbnail = thumbnailsnames;
       await post.save();
-
     }
-    
+
     res.status(200).json({ message: "حله" });
   } catch (err) {
     next(err);
@@ -348,6 +347,9 @@ exports.createTransactions = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+    const usercards = user.cards;
+    const maincard = usercards.find((q) => q.id === req.body.card);
+
     user.money = (await user.money) - req.body.price;
     user.save();
     await Transactions.create({
@@ -355,6 +357,7 @@ exports.createTransactions = async (req, res, next) => {
       createdAt: Date.now(),
       amount: req.body.price,
       paired: false,
+      card: maincard,
     });
 
     res.status(200).json({ message: "حله" });
@@ -767,10 +770,7 @@ exports.alltransactionstoadmin = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    const transactions = await Transactions.find({ paired: false }).populate(
-      "user"
-    );
-
+    const transactions = await Transactions.find({ paired: false })
     res.status(200).json(transactions);
   } catch (error) {
     next(error);
