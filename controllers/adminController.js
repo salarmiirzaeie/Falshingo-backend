@@ -13,6 +13,8 @@ const { fileFilter } = require("../utils/multer");
 const { getSinglePost } = require("./blogController");
 
 exports.getMyPosts = async (req, res, next) => {
+  await this.settourstatus()
+
   try {
     const posts = await Blog.find({
       user: req.userId,
@@ -348,8 +350,12 @@ exports.createTransactions = async (req, res, next) => {
       throw error;
     }
     const usercards = user.cards;
-    const maincard = usercards.find((q) => q.id === req.body.card);
-
+    let maincard = usercards.find((q) => q.id === req.body.card);
+    if (req.body.price > (await user.money)) {
+      const error = new Error("مبلغ درخواستی بیش از حد مجازاست");
+      error.statusCode = 404;
+      throw error;
+    }
     user.money = (await user.money) - req.body.price;
     user.save();
     await Transactions.create({
@@ -560,7 +566,7 @@ exports.saveds = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    const savs = await user.saveds;
+    const savs = await this.findsaveds(user);
 
     res.status(200).json(savs);
   } catch (err) {
@@ -770,7 +776,7 @@ exports.alltransactionstoadmin = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    const transactions = await Transactions.find({ paired: false })
+    const transactions = await Transactions.find({ paired: false });
     res.status(200).json(transactions);
   } catch (error) {
     next(error);
@@ -893,6 +899,49 @@ exports.findusersjoined = async (post) => {
   post.joinedUsers = i;
   return post.joinedUsers;
 };
+exports.findsaveds = async (user) => {
+  const ids = [];
+  user.saveds.forEach((i) => {
+    ids.push(i._id);
+  });
+  const savedposts = await Blog.find({ _id: { $in: ids } }).sort({
+    createdAt: "desc",
+  });
+ 
+  const i = [];
+  savedposts.forEach((w) => {
+    let obj = {};
+    obj.title = w.title;
+    obj._id = w._id;
+    obj.durationTime = w.durationTime;
+    obj.capacity = w.capacity;
+    obj.joinedUsers = w.joinedUsers;
+    obj.price = w.price;
+    obj.status = w.status;
+    obj.thumbnail = w.thumbnail;
+    obj.createdAt = w.createdAt;
+    
+    i.push(obj);
+  });
+  user.saveds = i;
+  return user.saveds;
+};
+exports.settourstatus = async () => {
+  const posts = await Blog.find({
+    isAccept: "accept",
+  }).sort({
+    createdAt: "desc",
+  });
+
+  await posts?.forEach(async (element) => {
+    let now = new Date();
+    let date = element.date;
+    if (now > date) {
+      element.status = "closed";
+      element.save();
+    }
+  });
+};
 exports.addCards = async (req, res, next) => {
   try {
     const card = req.body;
@@ -902,9 +951,20 @@ exports.addCards = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+    if (card.card.length !== 16) {
+      const error = new Error("شماره کارت اشتباه است");
+      error.statusCode = 405;
+      throw error;
+    }
+    if (card.shaba.length !== 24) {
+      const error = new Error("شماره شبا اشتباه است");
+      error.statusCode = 404;
+      throw error;
+    }
+
     const usercards = user.cards;
     usercards.forEach((item) => {
-      if (item.card === card.cards || item.shaba === card.shaba) {
+      if (item.card === card.card || item.shaba === card.shaba) {
         const error = new Error("شماقبلااین کارت واضافه کردید");
         error.statusCode = 409;
         throw error;

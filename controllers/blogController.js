@@ -7,14 +7,18 @@ const Gallery = require("../models/Gallery");
 const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
+const { settourstatus } = require("./adminController");
 
 let CAPTCHA_NUM;
 
 exports.getIndex = async (req, res, next) => {
+  await settourstatus()
+
   try {
     const posts = await Blog.find({
       isAccept: "accept",
       city: Number(req.params.city),
+      status: "Recruiting",
     }).sort({
       createdAt: "desc",
     });
@@ -31,6 +35,8 @@ exports.getIndex = async (req, res, next) => {
 };
 
 exports.getCampTours = async (req, res, next) => {
+ await settourstatus()
+
   try {
     const posts = await Blog.find({
       isAccept: "accept",
@@ -85,10 +91,14 @@ exports.getCampGallery = async (req, res, next) => {
   }
 };
 exports.getRelatedTours = async (req, res, next) => {
+ await settourstatus()
+
   try {
     const posts = await Blog.find({
       type: req.body.typep,
       _id: { $ne: req.body.id },
+      status: "Recruiting",
+
       city: Number(req.params.city),
       isAccept: "accept",
     })
@@ -116,7 +126,7 @@ exports.getPopularCamps = async (req, res, next) => {
       isAccept: "accept",
     })
       .sort({
-        rate: -1,
+        createdAt: -1,
       })
       .limit(5);
 
@@ -161,9 +171,13 @@ exports.getPopularCamps = async (req, res, next) => {
 };
 
 exports.getPopularTours = async (req, res, next) => {
+  await settourstatus()
+
   try {
     const tours = await Blog.find({
       isAccept: "accept",
+      status:"Recruiting",
+
       city: Number(req.params.city),
     })
       .sort({
