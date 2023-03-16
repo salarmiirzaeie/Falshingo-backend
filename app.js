@@ -1,8 +1,9 @@
 const path = require("path");
 const fs = require("fs");
-const https = require("https");
+const http = require("http");
 const fileUpload = require("express-fileupload");
 const express = require("express");
+const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const dotEnv = require("dotenv");
 
@@ -14,8 +15,6 @@ dotEnv.config({ path: "./config/config.env" });
 
 //* Database connection
 connectDB();
-
-
 
 const app = express();
 
@@ -37,6 +36,43 @@ app.use("/dashboard", require("./routes/dashboard"));
 //ErrorController
 app.use(errorHandler);
 const PORT = process.env.PORT || 3333;
-app.listen(PORT, () => {
+
+const server = http.createServer(app);
+const io = new Server(server);
+
+server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+const users = {};
+
+io.on("connection", (socket) => {
+    console.log(`User connected. ${socket.id}`);
+
+    // Listening
+
+    socket.on("login", (nickname) => {
+        console.log(`${nickname} Connected.`);
+        users[socket.id] = nickname;
+        io.sockets.emit("online", users);
+    });
+
+    socket.on("disconnect", () => {
+        console.log(`User disconnected.`);
+        delete users[socket.id];
+        io.sockets.emit("online", users);
+    });
+
+    socket.on("chat message", (data) => {
+        io.sockets.emit("chat message", data);
+    });
+
+    socket.on("typing", (data) => {
+        socket.broadcast.emit("typing", data);
+    });
+
+    socket.on("pvChat", (data) => {
+        console.log(`Private Chat Data: ${data}`);
+        console.log(data);
+        io.to(data.to).emit("pvChat", data);
+    });
 });
