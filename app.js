@@ -10,6 +10,7 @@ const dotEnv = require("dotenv");
 const connectDB = require("./config/db");
 const { errorHandler } = require("./middlewares/errors");
 const { setHeader } = require("./middlewares/headers");
+const { getuserid } = require("./middlewares/auth");
 //* Load Config
 dotEnv.config({ path: "./config/config.env" });
 
@@ -43,36 +44,47 @@ const io = new Server(server);
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
-const users = {};
+const users = [];
 
 io.on("connection", (socket) => {
-    console.log(`User connected. ${socket.id}`);
+  console.log(`User connected. ${socket.id}`);
 
-    // Listening
+  // Listening
+  socket.on("enterchat", async (nickname) => {
+    const user =await users.find((q) => q.userId === getuserid(nickname.userId));
 
-    socket.on("login", (nickname) => {
-        console.log(`${nickname} Connected.`);
-        users[socket.id] = nickname;
-        io.sockets.emit("online", users);
-    });
+    if (!user) {
+      users.push({ nickname: socket.id, userId: getuserid(nickname.userId) });
+    }
+    
+    console.log(users)
 
-    socket.on("disconnect", () => {
-        console.log(`User disconnected.`);
-        delete users[socket.id];
-        io.sockets.emit("online", users);
-    });
+  });
+  
 
-    socket.on("chat message", (data) => {
-        io.sockets.emit("chat message", data);
-    });
+  socket.on("disconnect", (socket) => {
+    console.log(`User disconnected.`);
+    const index = users.findIndex(
+      (q) => q.id=== socket.id
+    );
+    users.splice(index, 1);
+    console.log(users)
 
-    socket.on("typing", (data) => {
-        socket.broadcast.emit("typing", data);
-    });
+  });
 
-    socket.on("pvChat", (data) => {
-        console.log(`Private Chat Data: ${data}`);
-        console.log(data);
-        io.to(data.to).emit("pvChat", data);
-    });
+  // socket.on("chat message", (data) => {
+  //     io.sockets.emit("chat message", data);
+  // });
+
+  // socket.on("typing", (data) => {
+  //     socket.broadcast.emit("typing", data);
+  // });
+
+  socket.on("pvChat", (data) => {
+      console.log(`Private Chat Data: ${data}`);
+      console.log(data);
+      const user=users.find(r=>r.userId===data.to) 
+      console.log(user)
+      io.to(user?.nickname).emit("pvChat", data);
+  });
 });
