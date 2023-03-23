@@ -12,6 +12,7 @@ router.get("/get-permissions", authenticated,adminController.permissions);
 router.get("/get-income", authenticated,adminController.incomeTour);
 
 router.get("/get-gallery/:id", authenticated,adminController.gallery);
+router.get("/checkVersion/:version",adminController.checkVersion);
 router.get("/get-alltrans", authenticated,adminController.alltransactionstoadmin);
 router.get("/getsinglePost/:id",authenticated, adminController.getSinglePost);
 router.get("/getleaders",authenticated, adminController.getLeaders);

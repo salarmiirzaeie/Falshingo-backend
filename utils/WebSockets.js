@@ -1,4 +1,4 @@
-module.exports = class WebSockets {
+exports.webSockets = ()=>{
   users = [];
   connection(client) {
     // event fired when the chat room is disconnected
@@ -34,5 +34,7 @@ module.exports = class WebSockets {
       }
     });
   }
-};
+}
+  
+
 

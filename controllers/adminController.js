@@ -5,6 +5,7 @@ const sharp = require("sharp");
 const shortId = require("shortid");
 const appRoot = require("app-root-path");
 const User = require("../models/User");
+const Version = require("../models/Version");
 const Gallery = require("../models/Gallery");
 const Transactions = require("../models/Transactions");
 
@@ -13,7 +14,7 @@ const { fileFilter } = require("../utils/multer");
 const { getSinglePost } = require("./blogController");
 
 exports.getMyPosts = async (req, res, next) => {
-  await this.settourstatus()
+  await this.settourstatus();
 
   try {
     const posts = await Blog.find({
@@ -413,6 +414,19 @@ exports.gallery = async (req, res, next) => {
       createdAt: "desc",
     });
     res.status(200).json(gallery);
+  } catch (err) {
+    next(err);
+  }
+};
+exports.checkVersion = async (req, res, next) => {
+  try {
+    let updateshoulded = false;
+
+    let v = "1";
+    if (req.params.version !== v) {
+      updateshoulded = true;
+    }
+    res.status(200).json(updateshoulded);
   } catch (err) {
     next(err);
   }
@@ -907,7 +921,7 @@ exports.findsaveds = async (user) => {
   const savedposts = await Blog.find({ _id: { $in: ids } }).sort({
     createdAt: "desc",
   });
- 
+
   const i = [];
   savedposts.forEach((w) => {
     let obj = {};
@@ -920,7 +934,7 @@ exports.findsaveds = async (user) => {
     obj.status = w.status;
     obj.thumbnail = w.thumbnail;
     obj.createdAt = w.createdAt;
-    
+
     i.push(obj);
   });
   user.saveds = i;
