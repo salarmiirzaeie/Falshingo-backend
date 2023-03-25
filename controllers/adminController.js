@@ -12,6 +12,7 @@ const Transactions = require("../models/Transactions");
 const Blog = require("../models/Blog");
 const { fileFilter } = require("../utils/multer");
 const { getSinglePost } = require("./blogController");
+const { sendEmail } = require("../utils/mailer");
 
 exports.getMyPosts = async (req, res, next) => {
   await this.settourstatus();
@@ -174,6 +175,7 @@ exports.acceptPost = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.body.id);
     const admin = await User.findById(req.userId);
+    const creator = await User.findById(post.user);
     if (!post) {
       const error = new Error("هیجی نیس");
       error.statusCode = 404;
@@ -186,6 +188,18 @@ exports.acceptPost = async (req, res, next) => {
     }
     post.isAccept = req.body.data.toString();
     post.save();
+    sendEmail(
+      creator.email,
+      creator.name,
+      "انتشارتور",
+      `
+        <div>
+        <p>
+        تورشماتوسط کارشناسان ماتاییدگردیدودراپلیکیشن تورمیت منتشر شد.
+        </p>
+        </div>
+    `
+    );
     res.status(200).json({ message: "حله" });
   } catch (error) {
     next(error);
@@ -810,10 +824,24 @@ exports.setpairtransaction = async (req, res, next) => {
       throw error;
     }
     const transaction = await Transactions.findById(req.body.id);
+    const transrequester = await User.findById(transaction.user);
+
     transaction.paired = await req.body.data.toString();
     await transaction.save();
 
     res.status(200).json({ message: "حله" });
+    sendEmail(
+      transrequester.email,
+      transrequester.name,
+      "پرداخت وجه",
+      `
+        <div>
+        <p>
+        کاربرعزیزوجه درخواستی شما به حساب اعلام شده واریزگردید،ازاین که به تورمیت اعتمادکردید متشکریم.
+        </p>
+        </div>
+    `
+    );
   } catch (error) {
     next(error);
   }

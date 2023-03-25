@@ -297,18 +297,33 @@ exports.handleChangePassword = async (req, res, next) => {
 exports.acceptTour = async (req, res, next) => {
   try {
     const user = await User.findById(req.body.id);
+    const admin = await User.findById(req.userId);
+
+    if (admin.type !== "admin") {
+      const error = new Error("شمامجوزندارید");
+      error.statusCode = 401;
+      throw error;
+    }
     if (!user) {
       const error = new Error("هیجی نیس");
       error.statusCode = 404;
       throw error;
     }
-    // if (user.role !== process.env.ADMINROLE) {
-    //   const error = new Error("شمامجوزویرایش اینو ندارید ");
-    //   error.statusCode = 401;
-    //   throw error;
-    // }
+
     user.isAccept = req.body.data.toString();
     user.save();
+    sendEmail(
+      user.email,
+      user.name,
+      "تاییدمجوز",
+      `
+        <div>
+        <p>
+        مجوزهای شماتوسط کارشناسان ماتاییدگردید.دسترسی شمابرای ایجادتوروسایرامورتنظیم گردید.
+        </p>
+        </div>
+    `
+    );
     res.status(200).json({ message: "حله" });
   } catch (error) {
     next(error);
@@ -372,7 +387,10 @@ exports.userProfile = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-   const permissionlenth=await Gallery.find({type:"permissionphoto",user:req.userId}).countDocuments()
+    const permissionlenth = await Gallery.find({
+      type: "permissionphoto",
+      user: req.userId,
+    }).countDocuments();
     res.status(200).json({
       id: user._id,
       name: user.name,

@@ -23,7 +23,5 @@ exports.sendEmail = (email, fullname, subject, message) => {
         subject: subject,
         html: `<h1> سلام ${fullname}</h1>
             <p>${message}</p>`,
-    }).then((res)=>{
-console.log(res)
     })
 };
