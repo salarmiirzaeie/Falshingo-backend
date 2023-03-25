@@ -164,15 +164,19 @@ exports.handleForgetPassword = async (req, res, next) => {
     user.rnumb = rnumb;
     await user.save();
     console.log(rnumb);
-    // sendEmail(
-    //   user.email,
-    //   user.name,
-    //   "فراموشی رمز عبور",
-    //   `
-    //     جهت تغییر رمز عبور فعلی رو لینک زیر کلیک کنید
-    //     <a href="${resetLink}">لینک تغییر رمز عبور</a>
-    // `
-    // );
+    sendEmail(
+      user.email,
+      user.name,
+      "فراموشی رمز عبور",
+      `
+        <div style={{width:"80%}}>
+        <p>
+         کدامنیتی حساب شما درتورمیت    ${rnumb}می باشد.برای تایید حسابتان لطفا آن را جاگذاری نمایید
+
+        </p>
+        </div>
+    `
+    );
 
     res.status(200).json({ message: "ایمیل فرستاده شد", userId: user._id });
   } catch (error) {

@@ -2,25 +2,28 @@ const nodeMailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 
 const transporterDetails = smtpTransport({
-    host: "salarmiirzaeie@gmail.com",
+    host: "api.tourmeet.ir",
     port: 465,
     secure: true,
     auth: {
-        user: "salarmiirzaeie@gmail.com",
-        pass: "Salar9757110041",
+        user: "test@tourmeet.ir",
+        pass: "Salar@9757110041",
     },
     tls: {
         rejectUnauthorized: false,
     },
+    
 });
 
-exports.sendEmail = (email, name, subject, message) => {
+exports.sendEmail = (email, fullname, subject, message) => {
     const transporter = nodeMailer.createTransport(transporterDetails);
     transporter.sendMail({
-        from: "salarmiirzaeie@gmail.com",
+        from: "test@tourmeet.ir",
         to: email,
         subject: subject,
-        html: `<h1> سلام ${name}</h1>
+        html: `<h1> سلام ${fullname}</h1>
             <p>${message}</p>`,
-    });
+    }).then((res)=>{
+console.log(res)
+    })
 };
