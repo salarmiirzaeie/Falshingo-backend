@@ -4,6 +4,7 @@ const Blog = require("../models/Blog");
 const { sendEmail } = require("../utils/mailer");
 const User = require("../models/User");
 const Gallery = require("../models/Gallery");
+const Comments = require("../models/Comments");
 const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
@@ -12,7 +13,7 @@ const { settourstatus } = require("./adminController");
 let CAPTCHA_NUM;
 
 exports.getIndex = async (req, res, next) => {
-  await settourstatus()
+  await settourstatus();
 
   try {
     const posts = await Blog.find({
@@ -35,7 +36,7 @@ exports.getIndex = async (req, res, next) => {
 };
 
 exports.getCampTours = async (req, res, next) => {
- await settourstatus()
+  await settourstatus();
 
   try {
     const posts = await Blog.find({
@@ -91,7 +92,7 @@ exports.getCampGallery = async (req, res, next) => {
   }
 };
 exports.getRelatedTours = async (req, res, next) => {
- await settourstatus()
+  await settourstatus();
 
   try {
     const posts = await Blog.find({
@@ -171,12 +172,12 @@ exports.getPopularCamps = async (req, res, next) => {
 };
 
 exports.getPopularTours = async (req, res, next) => {
-  await settourstatus()
+  await settourstatus();
 
   try {
     const tours = await Blog.find({
       isAccept: "accept",
-      status:"Recruiting",
+      status: "Recruiting",
 
       city: Number(req.params.city),
     })
@@ -406,4 +407,45 @@ exports.findcity = async (id) => {
   let city = cities.find((q) => q.id === id);
 
   return city;
+};
+exports.createComment = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    const post = await Blog.findById(req.body.post);
+
+    if (!user) {
+      const error = new Error("هیجی نیس");
+      error.statusCode = 404;
+      throw error;
+    }
+    if (!post) {
+      const error = new Error("هیجی نیس");
+      error.statusCode = 404;
+      throw error;
+    }
+    await Blog.create({
+      post: req.body.post,
+      user: req.userId,
+      comment: req.body.comment,
+      reply: req.body.reply,
+    });
+    res.status(200).json({ message: "حله" });
+  } catch (err) {
+    next(err);
+  }
+};
+exports.postComments = async (req, res, next) => {
+  try {
+    const comments = await Comments.find({post:req.params.id});
+
+    if (!comments) {
+      const error = new Error("هیجی نیس");
+      error.statusCode = 404;
+      throw error;
+    }
+    
+    res.status(200).json(comments);
+  } catch (err) {
+    next(err);
+  }
 };
