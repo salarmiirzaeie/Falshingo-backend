@@ -423,29 +423,54 @@ exports.createComment = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    await Blog.create({
-      post: req.body.post,
-      user: req.userId,
+    await Comments.create({
+      post: post._id,
+      user: user._id,
       comment: req.body.comment,
-      reply: req.body.reply,
+      reply: req.body.reply === "" ? user._id : req.body.reply,
     });
+
     res.status(200).json({ message: "حله" });
   } catch (err) {
     next(err);
   }
 };
 exports.postComments = async (req, res, next) => {
+  const comments = await Comments.find({ post: req.params.id })
+
   try {
-    const comments = await Comments.find({post:req.params.id});
 
     if (!comments) {
       const error = new Error("هیجی نیس");
       error.statusCode = 404;
       throw error;
     }
-    
+     comments.forEach(async (item) => {
+      item.user =await this.userCommenter(item.user);
+    });
     res.status(200).json(comments);
   } catch (err) {
     next(err);
   }
+};
+exports.userCommenter = async (id) => {
+  const user = await User.findById(id);
+  const profilePhotos = await Gallery.find({
+    user: id,
+    type: "profilephoto",
+  }).sort({
+    createdAt: "desc",
+  });
+  if (!user) {
+    const error = new Error("هیجی نیس");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return {
+    name: user.name,
+    profilePhotos: profilePhotos,
+    username: user.username,
+    id: user._id,
+  };
 };

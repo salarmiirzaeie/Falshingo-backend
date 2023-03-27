@@ -1,6 +1,7 @@
 const { Router } = require("express");
 
 const blogController = require("../controllers/blogController");
+const { authenticated } = require("../middlewares/auth");
 
 const router = new Router();
 
@@ -32,7 +33,7 @@ router.get("/captcha.png", blogController.getCaptcha);
 //  @desc   Handle Contact Page
 //  @route  POST /contact
 router.post("/contact", blogController.handleContactPage);
-router.post("/addcm", blogController.createComment);
+router.post("/addcm", authenticated, blogController.createComment);
 router.post("/searchtour", blogController.searchTour);
 
 module.exports = router;

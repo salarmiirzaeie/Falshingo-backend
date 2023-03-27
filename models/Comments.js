@@ -14,6 +14,7 @@ const commentsSchmea = new mongoose.Schema({
   },
   reply: {
     type: mongoose.Schema.Types.ObjectId,
+    default:'0'
   },
 
   createdAt: {
