@@ -25,6 +25,7 @@ router.get("/postcomments/:id", blogController.postComments);
 
 router.get("/user/:id", blogController.getSingleuser);
 router.post("/relatedTours/:city", blogController.getRelatedTours);
+router.post("/paymony", blogController.paymony);
 
 //  @desc   Weblog Numric Captcha
 //  @route  GET /captcha.png

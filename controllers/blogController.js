@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
 const { settourstatus } = require("./adminController");
+var ZarinpalCheckout = require('../utils/zarinpal/index');
 
 let CAPTCHA_NUM;
 
@@ -473,4 +474,32 @@ exports.userCommenter = async (id) => {
     username: user.username,
     id: user._id,
   };
+};
+exports.paymony = async (req, res, next) => {
+
+  try {
+
+    describe('ZarinpalCheckout', function() {
+      it('should exist', function() {
+        return ZarinpalCheckout.should.exist;
+      });
+      it('should be able to create module', function () {
+        return ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
+      });
+      it('should be able to get authority', function() {
+        var zarinpal = ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
+        zarinpal.PaymentRequest({
+          Amount: '1000',
+          CallbackURL: 'http://tourmeet.ir',
+          Description: 'Hello NodeJS API.',
+          Email: 'salar.mirza777@gmail.com',
+          Mobile: '09222541680'
+        }).then(function (response) {
+          response.status.should.be.eq(100);
+        });
+      });
+    });
+  } catch (err) {
+    next(err);
+  }
 };

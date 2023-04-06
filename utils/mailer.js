@@ -6,8 +6,8 @@ const transporterDetails = smtpTransport({
     port: 465,
     secure: true,
     auth: {
-        user: "test@tourmeet.ir",
-        pass: "Salar@9757110041",
+        user: "support@tourmeet.ir",
+        pass: "Salar@9757110043",
     },
     tls: {
         rejectUnauthorized: false,
@@ -18,10 +18,12 @@ const transporterDetails = smtpTransport({
 exports.sendEmail = (email, fullname, subject, message) => {
     const transporter = nodeMailer.createTransport(transporterDetails);
     transporter.sendMail({
-        from: "test@tourmeet.ir",
+        from: "support@tourmeet.ir",
         to: email,
         subject: subject,
         html: `<h1> سلام ${fullname}</h1>
             <p>${message}</p>`,
+    }).then((res)=>{
+console.log(res)
     })
 };
