@@ -122,6 +122,12 @@ exports.createUser = async (req, res, next) => {
     }
     let usernam = null;
     if (type === "tourist") {
+      const regex = /^[a-zA-Z0-9_]+$/;
+      if (!regex.test(usernamelowered)) {
+        const error = new Error(" نام کاربری نامعتبراست");
+        error.statusCode = 408;
+        throw error;
+      }
       usernam = await User.findOne({ username: usernamelowered });
     }
     if (user) {
@@ -153,7 +159,7 @@ exports.handleForgetPassword = async (req, res, next) => {
   const { email } = await req.body;
   try {
     const user = await User.findOne({
-      $or: [{ email: email }, { username: email }],
+      $or: [{ email: email.toLowerCase() }, { username: email }],
     });
     if (!user) {
       const error = new Error("چنین کاربری موجود نیست");
@@ -213,6 +219,8 @@ exports.handleForgetPasswordResieved = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
+    user.rnumb = 0;
+
 
     res.status(200).json({ token });
   } catch (error) {
@@ -341,6 +349,12 @@ exports.editProfile = async (req, res, next) => {
 
     let usernam = null;
     if (user.type === "tourist") {
+      const regex = /^[a-zA-Z0-9_]+$/;
+      if (!regex.test(username.toLowerCase())) {
+        const error = new Error(" نام کاربری نامعتبراست");
+        error.statusCode = 408;
+        throw error;
+      }
       usernam = await User.findOne({ username: username.toLowerCase() });
     }
     const usernamemail = await User.findOne({ email: email });

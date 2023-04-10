@@ -24,10 +24,10 @@
         "node-fetch": "^2.6.1",
         "nodemailer": "^6.5.0",
         "nodemailer-smtp-transport": "^2.4.2",
-        "request-promise": "^4.2.6",
         "sharp": "^0.31.0",
         "shortid": "^2.2.16",
-        "yup": "^0.29.3"
+        "yup": "^0.29.3",
+        "zarinpal-checkout": "^0.2.7"
     },
     "devDependencies": {
         "cross-env": "^7.0.2"

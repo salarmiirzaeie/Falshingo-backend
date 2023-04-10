@@ -9,8 +9,7 @@ const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
 const { settourstatus } = require("./adminController");
-var ZarinpalCheckout = require('../utils/zarinpal/index');
-
+const ZarinpalCheckout = require('zarinpal-checkout');
 let CAPTCHA_NUM;
 
 exports.getIndex = async (req, res, next) => {
@@ -476,29 +475,25 @@ exports.userCommenter = async (id) => {
   };
 };
 exports.paymony = async (req, res, next) => {
-
   try {
+    const zarinpal = ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
 
-    describe('ZarinpalCheckout', function() {
-      it('should exist', function() {
-        return ZarinpalCheckout.should.exist;
-      });
-      it('should be able to create module', function () {
-        return ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
-      });
-      it('should be able to get authority', function() {
-        var zarinpal = ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
-        zarinpal.PaymentRequest({
-          Amount: '1000',
-          CallbackURL: 'http://tourmeet.ir',
-          Description: 'Hello NodeJS API.',
-          Email: 'salar.mirza777@gmail.com',
-          Mobile: '09222541680'
-        }).then(function (response) {
-          response.status.should.be.eq(100);
-        });
-      });
+    zarinpal.PaymentRequest({
+      Amount: '1000', // In Tomans
+      CallbackURL: 'https://tourmeet.ir',
+      Description: 'A Payment from Node.JS',
+      Email: 'salarmiirzaeie@gmail.com',
+      Mobile: '09222541680'
+    }).then(response => {
+      if (response.status === 100) {
+        console.log(response.url);
+        return res.status(200).json(response.url)
+
+      }
+    }).catch(err => {
+      console.error(err);
     });
+    
   } catch (err) {
     next(err);
   }
