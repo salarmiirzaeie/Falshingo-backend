@@ -445,45 +445,7 @@ exports.checkVersion = async (req, res, next) => {
     next(err);
   }
 };
-exports.joinTour = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) {
-      const error = new Error("چنین یوزری نیست");
-      error.statusCode = 404;
-      throw error;
-    }
 
-    if (req.body.status !== "ok") {
-      const error = new Error(
-        "پرداخت باموفقیت انجام نشد وشمانتوانستید عضو بشید"
-      );
-      error.statusCode = 410;
-      throw error;
-    }
-
-    const profilephotoss = await Gallery.find({
-      user: req.userId,
-      type: "profilephoto",
-    }).sort({
-      createdAt: "desc",
-    });
-    const { _id, name, email } = user;
-    const profile = { _id, name, email, profilephotoss };
-    const post = await Blog.findById(req.body.postId);
-    const touruser = await User.findById(post.user);
-    touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
-
-    await post.joinedUsers.push(profile);
-    // await user.joinedTours.push(post);
-    touruser.save();
-    post.save();
-    // user.save();
-    res.status(200).json({ message: "حله" });
-  } catch (err) {
-    next(err);
-  }
-};
 exports.unJoinTour = async (req, res, next) => {
   try {
     const post = await Blog.findById(req.body.postId);
@@ -604,14 +566,9 @@ exports.saveds = async (req, res, next) => {
 exports.joineds = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
-    const { _id, name, email, profilePhoto } = user;
-    const profilephotoss = await Gallery.find({
-      user: req.userId,
-      type: "profilephoto",
-    }).sort({
-      createdAt: "desc",
-    });
-    const profile = { _id, name, email, profilephotoss };
+    const { _id} = user;
+    
+    const profile = { _id};
     const toursjoined = await Blog.find({ joinedUsers: { $in: [profile] } });
     if (!user) {
       const error = new Error("چنین یوزری نیست");
@@ -940,6 +897,24 @@ exports.findusersjoined = async (post) => {
   });
   post.joinedUsers = i;
   return post.joinedUsers;
+};
+exports.joinTour = async (data) => {
+    const user = await User.findById(data.userId);
+    
+   
+    const { _id } = user;
+    const profile = { _id };
+    const post = await Blog.findById(data.postId);
+    const touruser = await User.findById(post.user);
+    touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
+
+    await post.joinedUsers.push(profile);
+    // await user.joinedTours.push(post);
+    touruser.save();
+    post.save();
+    // user.save();
+    return 200
+  
 };
 exports.findsaveds = async (user) => {
   const ids = [];

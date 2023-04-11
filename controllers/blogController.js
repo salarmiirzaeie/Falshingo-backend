@@ -8,8 +8,8 @@ const Comments = require("../models/Comments");
 const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
-const { settourstatus } = require("./adminController");
-const ZarinpalCheckout = require('zarinpal-checkout');
+const { settourstatus, joinTour } = require("./adminController");
+const ZarinpalCheckout = require("zarinpal-checkout");
 let CAPTCHA_NUM;
 
 exports.getIndex = async (req, res, next) => {
@@ -221,6 +221,7 @@ exports.getSinglePost = async (req, res, next) => {
       thumbnail: post.thumbnail,
       joinedUsers: post.joinedUsers,
       price: post.price,
+      status: post.status,
     };
     res
       .status(200)
@@ -436,17 +437,16 @@ exports.createComment = async (req, res, next) => {
   }
 };
 exports.postComments = async (req, res, next) => {
-  const comments = await Comments.find({ post: req.params.id })
+  const comments = await Comments.find({ post: req.params.id });
 
   try {
-
     if (!comments) {
       const error = new Error("هیجی نیس");
       error.statusCode = 404;
       throw error;
     }
-     comments.forEach(async (item) => {
-      item.user =await this.userCommenter(item.user);
+    comments.forEach(async (item) => {
+      item.user = await this.userCommenter(item.user);
     });
     res.status(200).json(comments);
   } catch (err) {
@@ -476,24 +476,73 @@ exports.userCommenter = async (id) => {
 };
 exports.paymony = async (req, res, next) => {
   try {
-    const zarinpal = ZarinpalCheckout.create('a47aea2b-27f3-41d9-a00c-dda053737e5c', false);
+    const post = await Blog.findById(req.body.postId);
+    const user = await User.findById(req.userId);
 
-    zarinpal.PaymentRequest({
-      Amount: '1000', // In Tomans
-      CallbackURL: 'https://tourmeet.ir',
-      Description: 'A Payment from Node.JS',
-      Email: 'salarmiirzaeie@gmail.com',
-      Mobile: '09222541680'
-    }).then(response => {
-      if (response.status === 100) {
-        console.log(response.url);
-        return res.status(200).json(response.url)
+    const zarinpal = ZarinpalCheckout.create(
+      "a47aea2b-27f3-41d9-a00c-dda053737e5c",
+      false
+    );
 
-      }
-    }).catch(err => {
-      console.error(err);
-    });
-    
+    zarinpal
+      .PaymentRequest({
+        Amount: "1000", // In Tomans
+        CallbackURL: `http://192.168.43.153:3000/#/redirectPage?&&userId=${req.userId}&&postId=${req.body.postId}`,
+        Description: `A Payment for ${req.userId}&${user.username}`,
+        Email: user.email,
+        Mobile: user.phoneNumber,
+      })
+      .then((response) => {
+        if (response.status === 100) {
+          console.log(response.url);
+          return res.status(200).json(response.url);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  } catch (err) {
+    next(err);
+  }
+};
+exports.verify = async (req, res, next) => {
+  try {
+    console.log(req.body.Authority);
+
+    const zarinpal = ZarinpalCheckout.create(
+      "a47aea2b-27f3-41d9-a00c-dda053737e5c",
+      false
+    );
+
+    zarinpal
+      .PaymentVerification({
+        Amount: "1000", // In Tomans
+        Authority: req.body.Authority,
+      })
+      .then(async (response) => {
+        if (response.status === -21) {
+          console.log("Empty!");
+        } else {
+          const user = await User.findById(req.body.userId);
+
+          const { _id } = user;
+          const profile = { _id };
+          const post = await Blog.findById(req.body.postId);
+          const touruser = await User.findById(post.user);
+          touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
+
+          await post.joinedUsers.push(profile);
+          // await user.joinedTours.push(post);
+          touruser.save();
+          post.save();
+
+          console.log(`Verified! Ref ID: ${response.RefID}`);
+          return res.status(200).json({refid:response.RefID,title:post.title})
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   } catch (err) {
     next(err);
   }
