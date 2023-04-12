@@ -486,8 +486,8 @@ exports.paymony = async (req, res, next) => {
 
     zarinpal
       .PaymentRequest({
-        Amount: "1000", // In Tomans
-        CallbackURL: `http://192.168.43.153:3000/#/redirectPage?&&userId=${req.userId}&&postId=${req.body.postId}`,
+        Amount: post.price.toString(), // In Tomans
+        CallbackURL: "http://192.168.43.153:3000/#/redirectPage?&UserId="+req.userId+"&postId="+req.body.postId+"",
         Description: `A Payment for ${req.userId}&${user.username}`,
         Email: user.email,
         Mobile: user.phoneNumber,
@@ -507,16 +507,15 @@ exports.paymony = async (req, res, next) => {
 };
 exports.verify = async (req, res, next) => {
   try {
-    console.log(req.body.Authority);
-
     const zarinpal = ZarinpalCheckout.create(
       "a47aea2b-27f3-41d9-a00c-dda053737e5c",
       false
     );
+    const post = await Blog.findById(req.body.postId);
 
     zarinpal
       .PaymentVerification({
-        Amount: "1000", // In Tomans
+        Amount: post.price.toString(), // In Tomans
         Authority: req.body.Authority,
       })
       .then(async (response) => {
@@ -527,7 +526,6 @@ exports.verify = async (req, res, next) => {
 
           const { _id } = user;
           const profile = { _id };
-          const post = await Blog.findById(req.body.postId);
           const touruser = await User.findById(post.user);
           touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
 
@@ -537,7 +535,9 @@ exports.verify = async (req, res, next) => {
           post.save();
 
           console.log(`Verified! Ref ID: ${response.RefID}`);
-          return res.status(200).json({refid:response.RefID,title:post.title})
+          return res
+            .status(200)
+            .json({ refid: response.RefID, title: post.title });
         }
       })
       .catch((err) => {
