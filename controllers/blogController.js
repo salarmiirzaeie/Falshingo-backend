@@ -8,7 +8,7 @@ const Comments = require("../models/Comments");
 const jwt = require("jsonwebtoken");
 const provinces = require("../utils/json/provinces");
 const citiess = require("../utils/json/cities");
-const { settourstatus, joinTour } = require("./adminController");
+const { settourstatus } = require("./adminController");
 const ZarinpalCheckout = require("zarinpal-checkout");
 let CAPTCHA_NUM;
 
@@ -36,15 +36,14 @@ exports.getIndex = async (req, res, next) => {
 };
 exports.getallcompany = async (req, res, next) => {
   try {
-    const user=await User.findById(req.userId)
-    if (user.type!=='admin') {
+    const user = await User.findById(req.userId);
+    if (user.type !== "admin") {
       const error = new Error("عدم دسترسی");
       error.statusCode = 405;
       throw error;
     }
     const posts = await User.find({
       type: "tour",
-
     }).sort({
       createdAt: "desc",
     });
@@ -242,6 +241,8 @@ exports.getSinglePost = async (req, res, next) => {
       durationTime: post.durationTime,
       isAccept: post.isAccept,
       title: post.title,
+      manualjoinedcount: post.manualjoinedcount,
+      enddate: post.enddate,
       type: post.type,
       thumbnail: post.thumbnail,
       joinedUsers: post.joinedUsers,
@@ -593,5 +594,41 @@ exports.verify = async (req, res, next) => {
       });
   } catch (err) {
     next(err);
+  }
+};
+
+exports.commented = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("چنین یوزری نیست");
+      error.statusCode = 404;
+      throw error;
+    }
+    const { _id } = user;
+    const trs = [];
+    const profile = { _id, commented: false };
+    const toursjoined = await Blog.find({ joinedUsers: { $in: [profile] } });
+    await toursjoined.forEach(async (element) => {
+      let now = new Date();
+      let date = element.createdAt;
+      if (now > date) {
+        element.joinedUsers.forEach((item)=>{
+          if (item._id.toString()===user._id.toString()) {
+            trs.push(element._id);
+
+            item.commented=== true
+            element.save()
+            
+          }
+
+        }) 
+
+      }
+    });
+
+    res.status(200).json(trs);
+  } catch (error) {
+    next(error);
   }
 };

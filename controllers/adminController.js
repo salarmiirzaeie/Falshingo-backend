@@ -77,11 +77,13 @@ exports.editPost = async (req, res, next) => {
         .catch((err) => console.log(err));
     });
 
-    const { title, isAccept, body, date, durationTime, capacity, type, price } =
+    const { title, isAccept, body, date, durationTime, capacity, type, price,enddate,manualjoinedcount } =
       req.body;
     if (post.joinedUsers.length === 0) {
       post.title = title;
       post.isAccept = isAccept;
+      post.manualjoinedcount = manualjoinedcount;
+      post.enddate = enddate;
       post.body = body;
       post.type = type;
       post.price = price;
@@ -631,8 +633,12 @@ exports.joineds = async (req, res, next) => {
     const user = await User.findById(req.userId);
     const { _id } = user;
 
-    const profile = { _id };
-    const toursjoined = await Blog.find({ joinedUsers: { $in: [profile] } });
+    const profile = { _id, commented: false };
+    const profile2 = { _id, commented: true };
+    const toursjoined = await Blog.find(
+     { $or: [ {joinedUsers: { $in: [profile] }},{joinedUsers: { $in: [profile2] }}] },
+    );
+    
     if (!user) {
       const error = new Error("چنین یوزری نیست");
       error.statusCode = 404;
@@ -961,12 +967,14 @@ exports.findusersjoined = async (post) => {
   post.joinedUsers = i;
   return post.joinedUsers;
 };
-exports.joinTour = async (data) => {
-  const user = await User.findById(data.userId);
+
+exports.joinTour = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
 
   const { _id } = user;
-  const profile = { _id };
-  const post = await Blog.findById(data.postId);
+  const profile = { _id, commented: false };
+  const post = await Blog.findById(req.body.postId);
   const touruser = await User.findById(post.user);
   touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
 
@@ -974,8 +982,11 @@ exports.joinTour = async (data) => {
   // await user.joinedTours.push(post);
   touruser.save();
   post.save();
-  // user.save();
-  return 200;
+  res.status(200).json({message:'ok'});
+
+  } catch (error) {
+    next(error);
+  }
 };
 exports.findsaveds = async (user) => {
   const ids = [];
@@ -993,6 +1004,8 @@ exports.findsaveds = async (user) => {
     obj._id = w._id;
     obj.durationTime = w.durationTime;
     obj.capacity = w.capacity;
+    obj.enddate = w.enddate;
+    obj.manualjoinedcount = w.manualjoinedcount;
     obj.joinedUsers = w.joinedUsers;
     obj.price = w.price;
     obj.status = w.status;
@@ -1014,8 +1027,13 @@ exports.settourstatus = async () => {
   await posts?.forEach(async (element) => {
     let now = new Date();
     let date = element.date;
+    let enddate = element.enddate;
     if (now > date) {
       element.status = "closed";
+      element.save();
+    }
+    if (now > enddate) {
+      element.status = "ended";
       element.save();
     }
   });

@@ -17,6 +17,7 @@ router.get("/getCampTours/:id", blogController.getCampTours);
 router.get("/getCampGallery/:id", blogController.getCampGallery);
 router.get("/getcampleaders/:id", blogController.getCampLeaders);
 router.get("/getallcamps",authenticated, blogController.getallcompany);
+router.get("/commented",authenticated, blogController.commented);
 
 //  @desc   Weblog Post Page
 //  @route  GET /post/:id

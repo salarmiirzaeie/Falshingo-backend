@@ -46,6 +46,13 @@ const blogSchmea = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  manualjoinedcount: {
+    type: Number,
+  },
+  enddate: {
+    type: Date,
+  },
+
   price: {
     type: Number,
   },
@@ -60,12 +67,12 @@ const blogSchmea = new mongoose.Schema({
   status: {
     type: String,
     default: "Recruiting",
-    enum: ["Recruiting", "closed"],
+    enum: ["Recruiting", "closed","ended"],
   },
-  pairtotour:{
-    type:Boolean,
-    default:false
-  }
+  pairtotour: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 blogSchmea.index({ title: "text" });
