@@ -45,6 +45,7 @@ router.put("/delte-galley/:name",authenticated, adminController.deleteGallery);
 //  @desc   Dashboard Delete Post
 //  @route  GET /dashboard/delete-post/:id
 router.delete("/delete-post/:id", authenticated, adminController.deletePost);
+router.delete("/deletecampbyadmin/:id", authenticated, adminController.deletePostadmin);
 router.delete("/delete-gallery/:id", authenticated, adminController.deleteGallery);
 
 //  @desc   Dashboard Handle Post Creation

@@ -34,6 +34,31 @@ exports.getIndex = async (req, res, next) => {
     next(err);
   }
 };
+exports.getallcompany = async (req, res, next) => {
+  try {
+    const user=await User.findById(req.userId)
+    if (user.type!=='admin') {
+      const error = new Error("عدم دسترسی");
+      error.statusCode = 405;
+      throw error;
+    }
+    const posts = await User.find({
+      type: "tour",
+
+    }).sort({
+      createdAt: "desc",
+    });
+    if (!posts) {
+      const error = new Error("هیچی نیس");
+      error.statusCode = 408;
+      throw error;
+    }
+
+    res.status(200).json(posts);
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.getCampTours = async (req, res, next) => {
   await settourstatus();
@@ -487,7 +512,12 @@ exports.paymony = async (req, res, next) => {
     zarinpal
       .PaymentRequest({
         Amount: post.price.toString(), // In Tomans
-        CallbackURL: "http://192.168.43.153:3000/#/redirectPage?&UserId="+req.userId+"&postId="+req.body.postId+"",
+        CallbackURL:
+          "http://192.168.43.153:3000/#/redirectPage?&UserId=" +
+          req.userId +
+          "&postId=" +
+          req.body.postId +
+          "",
         Description: `A Payment for ${req.userId}&${user.username}`,
         Email: user.email,
         Mobile: user.phoneNumber,
@@ -513,6 +543,16 @@ exports.verify = async (req, res, next) => {
     );
     const post = await Blog.findById(req.body.postId);
 
+    if (!post) {
+      const error = new Error("هیجی نیس");
+      error.statusCode = 404;
+      throw error;
+    }
+    if (req.body.Status !== "OK") {
+      const error = new Error("خطا");
+      error.statusCode = 410;
+      throw error;
+    }
     zarinpal
       .PaymentVerification({
         Amount: post.price.toString(), // In Tomans
@@ -520,9 +560,17 @@ exports.verify = async (req, res, next) => {
       })
       .then(async (response) => {
         if (response.status === -21) {
-          console.log("Empty!");
+          const error = new Error("خطا");
+          error.statusCode = 409;
+          throw error;
         } else {
           const user = await User.findById(req.body.userId);
+
+          if (!user) {
+            const error = new Error("هیجی نیس");
+            error.statusCode = 404;
+            throw error;
+          }
 
           const { _id } = user;
           const profile = { _id };

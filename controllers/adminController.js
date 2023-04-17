@@ -205,6 +205,69 @@ exports.acceptPost = async (req, res, next) => {
     next(error);
   }
 };
+exports.deletePostadmin = async (req, res, next) => {
+  try {
+    const admin = await User.findById(req.userId);
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      const error = new Error("هیجی نیس");
+      error.statusCode = 404;
+      throw error;
+    }
+    if (admin.type !== "admin") {
+      const error = new Error("شمامجوزندارید");
+      error.statusCode = 401;
+      throw error;
+    }
+    const posts = await Blog.find({ user: user._id });
+    const permissions = await Gallery.find({
+      user: user._id,
+      type: "permissionphoto",
+    });
+    const profilePhotos = await Gallery.find({
+      user: user._id,
+      type: "profilephoto",
+    });
+    posts.thumbnail?.forEach((item) => {
+      const filePath = `${appRoot}/public/uploads/thumbnails/${item}`;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          const error = new Error("خطای پاکسازی ");
+          error.statusCode = 400;
+          throw error;
+        }
+      });
+    });
+    await Blog.deleteMany({ user: user._id });
+
+    permissions?.forEach((item) => {
+      const filePath = `${appRoot}/public/uploads/permissions/${item.name}`;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          const error = new Error("خطای پاکسازی ");
+          error.statusCode = 400;
+          throw error;
+        }
+      });
+    });
+    profilePhotos?.forEach((item) => {
+      const filePath = `${appRoot}/public/uploads/profilePhotos/${item.name}`;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          const error = new Error("خطای پاکسازی ");
+          error.statusCode = 400;
+          throw error;
+        }
+      });
+    });
+    await Gallery.deleteMany({ user: user._id });
+    await User.findByIdAndDelete(user._id);
+
+    res.status(200).json({ message: "حله" });
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.requestedTours = async (req, res, next) => {
   try {
@@ -566,9 +629,9 @@ exports.saveds = async (req, res, next) => {
 exports.joineds = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
-    const { _id} = user;
-    
-    const profile = { _id};
+    const { _id } = user;
+
+    const profile = { _id };
     const toursjoined = await Blog.find({ joinedUsers: { $in: [profile] } });
     if (!user) {
       const error = new Error("چنین یوزری نیست");
@@ -899,22 +962,20 @@ exports.findusersjoined = async (post) => {
   return post.joinedUsers;
 };
 exports.joinTour = async (data) => {
-    const user = await User.findById(data.userId);
-    
-   
-    const { _id } = user;
-    const profile = { _id };
-    const post = await Blog.findById(data.postId);
-    const touruser = await User.findById(post.user);
-    touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
+  const user = await User.findById(data.userId);
 
-    await post.joinedUsers.push(profile);
-    // await user.joinedTours.push(post);
-    touruser.save();
-    post.save();
-    // user.save();
-    return 200
-  
+  const { _id } = user;
+  const profile = { _id };
+  const post = await Blog.findById(data.postId);
+  const touruser = await User.findById(post.user);
+  touruser.blockedmoney = (await touruser.blockedmoney) + post.price;
+
+  await post.joinedUsers.push(profile);
+  // await user.joinedTours.push(post);
+  touruser.save();
+  post.save();
+  // user.save();
+  return 200;
 };
 exports.findsaveds = async (user) => {
   const ids = [];
