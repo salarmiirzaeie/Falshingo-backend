@@ -23,7 +23,7 @@ router.get("/commented",authenticated, blogController.commented);
 //  @route  GET /post/:id
 router.get("/joinedusers/:id", blogController.getpostjoiners);
 router.get("/post/:id", blogController.getSinglePost);
-router.get("/postcomments/:id", blogController.postComments);
+router.get("/postcomments/:id",authenticated, blogController.postComments);
 
 router.get("/user/:id", blogController.getSingleuser);
 router.post("/relatedTours/:city", blogController.getRelatedTours);

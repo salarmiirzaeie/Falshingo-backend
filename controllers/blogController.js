@@ -463,18 +463,64 @@ exports.createComment = async (req, res, next) => {
   }
 };
 exports.postComments = async (req, res, next) => {
-  const comments = await Comments.find({ post: req.params.id });
-
   try {
+    const comments = await Comments.find({ post: req.params.id });
+    const users = await User.find({ type: "tourist" });
+    const pfs = await Gallery.find({ type: "profilephoto" }).sort({
+      createdAt: "desc",
+    });
+    let access = false;
+    const user = await User.findById(req.userId);
+    const { _id } = user;
+
+    const profile = { _id, commented: false };
+    const profile2 = { _id, commented: true };
+    const toursjoined = await Blog.find({
+      _id: req.params.id,
+      $or: [
+        { joinedUsers: { $in: [profile] } },
+        { joinedUsers: { $in: [profile2] } },
+      ],
+    });
+    if (toursjoined.length !== 0) {
+      access = true;
+    }
+
     if (!comments) {
       const error = new Error("هیجی نیس");
       error.statusCode = 404;
       throw error;
     }
-    comments.forEach(async (item) => {
-      item.user = await this.userCommenter(item.user);
+    const cms = [];
+    comments.forEach((item) => {
+      users.forEach((e) => {
+        if (item.user.toString() === e._id.toString()) {
+          const profilephotos = [];
+
+          if (pfs!==[]) {
+            pfs.forEach((p) => {
+              if (p.user.toString() === e._id.toString()) {
+                profilephotos.push(p);
+              }
+            });
+          }
+          
+          let username = e.username;
+          let userId = e._id;
+
+          let cm = {
+            ...item._doc,
+            username,
+            userId:userId,
+            profilephoto: profilephotos[0]?.name,
+          };
+          cms.push(cm);
+
+        }
+      });
     });
-    res.status(200).json(comments);
+
+    res.status(200).json({ comments: cms, accesswrite: access });
   } catch (err) {
     next(err);
   }
@@ -613,17 +659,14 @@ exports.commented = async (req, res, next) => {
       let now = new Date();
       let date = element.createdAt;
       if (now > date) {
-        element.joinedUsers.forEach((item)=>{
-          if (item._id.toString()===user._id.toString()) {
+        element.joinedUsers.forEach((item) => {
+          if (item._id.toString() === user._id.toString()) {
             trs.push(element._id);
 
-            item.commented=== true
-            element.save()
-            
+            item.commented === true;
+            element.save();
           }
-
-        }) 
-
+        });
       }
     });
 
