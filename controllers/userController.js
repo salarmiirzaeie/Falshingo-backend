@@ -1,16 +1,7 @@
 const jwt = require("jsonwebtoken");
-const multer = require("multer");
-const fs = require("fs");
 
-const { fileFilter } = require("../utils/multer");
-const sharp = require("sharp");
-const shortId = require("shortid");
-const appRoot = require("app-root-path");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const { sendEmail } = require("../utils/mailer");
-const Gallery = require("../models/Gallery");
-const citiess = require("../utils/json/cities");
 
 exports.handleLogin = async (req, res, next) => {
   const { email, password } = req.body;
